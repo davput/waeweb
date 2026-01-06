@@ -1,0 +1,45 @@
+# Alternative Dockerfile menggunakan Alpine (lebih kecil)
+FROM node:18-alpine
+
+# Install Chromium dan dependencies
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    nodejs \
+    yarn
+
+# Set working directory
+WORKDIR /app
+
+# Tell Puppeteer to skip installing Chrome. We'll be using the installed package.
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm install --production
+
+# Copy application files
+COPY . .
+
+# Create directories for data persistence
+RUN mkdir -p /app/.wwebjs_auth /app/archives
+
+# Add user so we don't need --no-sandbox
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Change ownership
+RUN chown -R nodejs:nodejs /app
+
+# Switch to nodejs user
+USER nodejs
+
+# Run the bot
+CMD ["node", "finance-bot.js"]

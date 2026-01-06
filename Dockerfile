@@ -1,12 +1,18 @@
 # Base image dengan Node.js
 FROM node:18-slim
 
-# Install dependencies untuk Puppeteer
+# Install dependencies untuk Puppeteer dan Chromium
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
     ca-certificates \
     fonts-liberation \
+    fonts-ipafont-gothic \
+    fonts-wqy-zenhei \
+    fonts-thai-tlwg \
+    fonts-kacst \
+    fonts-freefont-ttf \
+    libappindicator3-1 \
     libasound2 \
     libatk-bridge2.0-0 \
     libatk1.0-0 \
@@ -40,6 +46,7 @@ RUN apt-get update && apt-get install -y \
     libxtst6 \
     lsb-release \
     xdg-utils \
+    --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -48,7 +55,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies - Puppeteer akan download Chromium otomatis
+# JANGAN set PUPPETEER_SKIP_CHROMIUM_DOWNLOAD agar Puppeteer download Chromium
 RUN npm install --production
 
 # Copy application files
@@ -57,9 +65,8 @@ COPY . .
 # Create directories for data persistence
 RUN mkdir -p /app/.wwebjs_auth /app/archives
 
-# Set environment variables
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=false
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
+# TIDAK perlu set PUPPETEER_EXECUTABLE_PATH
+# Biarkan Puppeteer menggunakan Chromium yang di-download saat npm install
 
 # Expose port (optional, jika nanti mau tambah web dashboard)
 # EXPOSE 3000

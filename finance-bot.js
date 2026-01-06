@@ -10,7 +10,20 @@ const ARCHIVE_DIR = path.join(__dirname, 'archives');
 
 // Inisialisasi client dengan LocalAuth
 const client = new Client({
-    authStrategy: new LocalAuth()
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+        // Biarkan executablePath kosong agar Puppeteer gunakan Chromium bawaan
+    }
 });
 
 // Load data keuangan

@@ -72,7 +72,7 @@ cd whatsapp-web.js
 ### 2. Build dan Jalankan Container
 
 ```bash
-# Build Docker image
+# Build Docker image (akan memakan waktu beberapa menit)
 docker compose build
 
 # Jalankan container
@@ -80,6 +80,21 @@ docker compose up -d
 
 # Lihat logs untuk scan QR code
 docker compose logs -f
+```
+
+**Catatan:** Build pertama kali akan memakan waktu 5-10 menit karena menginstall Chromium dan dependencies.
+
+**Jika ingin menggunakan Alpine (image lebih kecil):**
+```bash
+# Edit docker-compose.yml, ganti:
+# build: .
+# menjadi:
+# build:
+#   context: .
+#   dockerfile: Dockerfile.alpine
+
+docker compose build
+docker compose up -d
 ```
 
 ### 3. Scan QR Code
@@ -248,6 +263,24 @@ docker stats
 docker compose down -v
 docker compose build --no-cache
 docker compose up -d
+```
+
+### Error: Chrome/Chromium not found
+```bash
+# Pastikan build ulang dengan cache bersih
+docker compose down
+docker system prune -a
+docker compose build --no-cache
+docker compose up -d
+
+# Atau gunakan Dockerfile.alpine
+# Edit docker-compose.yml untuk menggunakan Dockerfile.alpine
+```
+
+### Error: Failed to launch browser
+```bash
+# Tambahkan args di finance-bot.js untuk no-sandbox mode
+# Atau pastikan container punya cukup memory (minimal 1GB)
 ```
 
 ### QR Code tidak muncul
