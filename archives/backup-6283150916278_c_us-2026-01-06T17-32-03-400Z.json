@@ -1,0 +1,36 @@
+{
+  "transactions": [
+    {
+      "id": 1767720693294,
+      "type": "expense",
+      "amount": 50000,
+      "category": "Lainnya",
+      "description": "saldo",
+      "date": "2026-01-06T17:31:33.294Z"
+    },
+    {
+      "id": 1767720701228,
+      "type": "expense",
+      "amount": 20000,
+      "category": "Belanja",
+      "description": "maem",
+      "date": "2026-01-06T17:31:41.228Z"
+    },
+    {
+      "id": 1767720707889,
+      "type": "expense",
+      "amount": 1000000,
+      "category": "Makanan",
+      "description": "jajan",
+      "date": "2026-01-06T17:31:47.889Z"
+    }
+  ],
+  "categories": [
+    "Makanan",
+    "Transport",
+    "Belanja",
+    "Tagihan",
+    "Gaji",
+    "Lainnya"
+  ]
+}

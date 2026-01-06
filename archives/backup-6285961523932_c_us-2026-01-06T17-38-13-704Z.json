@@ -1,0 +1,76 @@
+{
+  "transactions": [
+    {
+      "id": 1767720960495,
+      "type": "expense",
+      "amount": 3000000,
+      "category": "Lainnya",
+      "description": "saldo",
+      "date": "2026-01-06T17:36:00.495Z"
+    },
+    {
+      "id": 1767721023899,
+      "type": "income",
+      "amount": 3000000,
+      "category": "Gaji",
+      "description": "masuk",
+      "date": "2026-01-06T17:37:03.899Z"
+    },
+    {
+      "id": 1767721043775,
+      "type": "expense",
+      "amount": 28000,
+      "category": "Belanja",
+      "description": "deles",
+      "date": "2026-01-06T17:37:23.775Z"
+    },
+    {
+      "id": 1767721049638,
+      "type": "expense",
+      "amount": 23000,
+      "category": "Belanja",
+      "description": "galon",
+      "date": "2026-01-06T17:37:29.638Z"
+    },
+    {
+      "id": 1767721054614,
+      "type": "expense",
+      "amount": 5000,
+      "category": "Belanja",
+      "description": "soklin",
+      "date": "2026-01-06T17:37:34.614Z"
+    },
+    {
+      "id": 1767721060499,
+      "type": "expense",
+      "amount": 2000,
+      "category": "Lainnya",
+      "description": "cetak foto",
+      "date": "2026-01-06T17:37:40.499Z"
+    },
+    {
+      "id": 1767721073465,
+      "type": "expense",
+      "amount": 250000,
+      "category": "Lainnya",
+      "description": "uang buat alin",
+      "date": "2026-01-06T17:37:53.465Z"
+    },
+    {
+      "id": 1767721084088,
+      "type": "expense",
+      "amount": 250000,
+      "category": "Lainnya",
+      "description": "uang buat vero",
+      "date": "2026-01-06T17:38:04.088Z"
+    }
+  ],
+  "categories": [
+    "Makanan",
+    "Transport",
+    "Belanja",
+    "Tagihan",
+    "Gaji",
+    "Lainnya"
+  ]
+}

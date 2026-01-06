@@ -1,0 +1,28 @@
+{
+  "transactions": [
+    {
+      "id": 1,
+      "type": "expense",
+      "amount": 20000,
+      "category": "Makanan",
+      "description": "makan",
+      "date": "2026-01-06T18:16:28.627Z"
+    },
+    {
+      "id": 2,
+      "type": "expense",
+      "amount": 200000,
+      "category": "Makanan",
+      "description": "minum",
+      "date": "2026-01-06T18:16:49.300Z"
+    }
+  ],
+  "categories": [
+    "Makanan",
+    "Transport",
+    "Belanja",
+    "Tagihan",
+    "Gaji",
+    "Lainnya"
+  ]
+}

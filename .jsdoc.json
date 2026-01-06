@@ -1,4 +1,4 @@
-{
+    {
     "tags": {
         "allowUnknownTags": true,
         "dictionaries": ["jsdoc"]

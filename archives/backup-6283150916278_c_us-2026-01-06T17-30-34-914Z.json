@@ -1,0 +1,60 @@
+{
+  "transactions": [
+    {
+      "id": 1767718788170,
+      "type": "income",
+      "amount": 25000,
+      "category": "makanan",
+      "description": "wismie",
+      "date": "2026-01-06T16:59:48.171Z"
+    },
+    {
+      "id": 1767719055144,
+      "type": "expense",
+      "amount": 10000,
+      "category": "Makanan",
+      "description": "bakso",
+      "date": "2026-01-06T17:04:15.144Z"
+    },
+    {
+      "id": 1767719064917,
+      "type": "expense",
+      "amount": 20000,
+      "category": "Makanan",
+      "description": "minum",
+      "date": "2026-01-06T17:04:24.917Z"
+    },
+    {
+      "id": 1767719451704,
+      "type": "expense",
+      "amount": 10000,
+      "category": "Belanja",
+      "description": "seblak",
+      "date": "2026-01-06T17:10:51.704Z"
+    },
+    {
+      "id": 1767719559093,
+      "type": "income",
+      "amount": 50,
+      "category": "bni",
+      "description": "cash",
+      "date": "2026-01-06T17:12:39.093Z"
+    },
+    {
+      "id": 1767719819951,
+      "type": "income",
+      "amount": 1000000,
+      "category": "Gaji",
+      "description": "Pemasukan",
+      "date": "2026-01-06T17:16:59.951Z"
+    }
+  ],
+  "categories": [
+    "Makanan",
+    "Transport",
+    "Belanja",
+    "Tagihan",
+    "Gaji",
+    "Lainnya"
+  ]
+}

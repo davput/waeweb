@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  whatsapp-finance-bot:
+    build: .
+    container_name: whatsapp-finance-bot
+    restart: unless-stopped
+    volumes:
+      # Persist WhatsApp session
+      - ./wwebjs_auth:/app/.wwebjs_auth
+      # Persist finance data
+      - ./finance-data.json:/app/finance-data.json
+      # Persist archives
+      - ./archives:/app/archives
+    environment:
+      - NODE_ENV=production
+      - TZ=Asia/Jakarta
+    # Jika butuh network khusus
+    # networks:
+    #   - bot-network
+    # Limit resources (optional)
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+# networks:
+#   bot-network:
+#     driver: bridge
