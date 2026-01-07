@@ -3,10 +3,28 @@ const qrcode = require('qrcode-terminal');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
 
 // File untuk menyimpan data keuangan
 const DATA_FILE = path.join(__dirname, 'finance-data.json');
 const ARCHIVE_DIR = path.join(__dirname, 'archives');
+
+// ===== WHITELIST CONFIGURATION =====
+const ALLOWED_USERS = config.ALLOWED_USERS;
+const ALLOW_ALL_USERS = config.ALLOW_ALL_USERS;
+
+// Fungsi untuk cek apakah user diizinkan
+function isUserAllowed(userId) {
+    if (ALLOW_ALL_USERS) {
+        console.log(`⚠️  ALLOW_ALL_USERS is enabled - User ${userId} allowed`);
+        return true;
+    }
+    const allowed = ALLOWED_USERS.includes(userId);
+    if (!allowed) {
+        console.log(`🚫 Access denied for user: ${userId}`);
+    }
+    return allowed;
+}
 
 // Inisialisasi client dengan LocalAuth
 const client = new Client({
@@ -45,7 +63,7 @@ function initUser(userId) {
     if (!data[userId]) {
         data[userId] = {
             transactions: [],
-            categories: ['Makanan', 'Transport', 'Belanja', 'Tagihan', 'Gaji', 'Lainnya']
+            categories: config.DEFAULT_CATEGORIES
         };
         saveData(data);
     }
@@ -78,14 +96,40 @@ function parseNaturalMessage(text) {
     let cleanText = text.toLowerCase()
         .replace(/^(beli|bayar|belanja|buat|untuk|dapat|terima|dapet|uang\s+masuk|uang\s+keluar)\s+/i, '');
     
-    // Extract jumlah (support format: 10k, 10rb, 5jt, 5000000)
-    const amountMatch = cleanText.match(/(\d+(?:\.\d+)?)\s*(k|rb|ribu|jt|juta)?/i);
+    // Extract jumlah dengan berbagai format:
+    // - 10k, 10rb, 5jt (dengan suffix)
+    // - 5000000 (angka biasa)
+    // - 2.452.382 (dengan titik pemisah ribuan)
+    // - 2,452,382 (dengan koma pemisah ribuan)
+    // - 50.5 atau 50,5 (dengan desimal)
+    const amountMatch = cleanText.match(/(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?|\d+(?:[.,]\d{1,2})?)\s*(k|rb|ribu|jt|juta)?/i);
     if (!amountMatch) return null;
     
-    let amount = parseFloat(amountMatch[1]);
+    let amountStr = amountMatch[1];
     const unit = amountMatch[2]?.toLowerCase();
     
-    // Konversi ke rupiah
+    // Normalisasi format angka
+    // Deteksi apakah menggunakan titik atau koma sebagai pemisah ribuan
+    const dotCount = (amountStr.match(/\./g) || []).length;
+    const commaCount = (amountStr.match(/,/g) || []).length;
+    
+    // Jika ada lebih dari 1 titik atau koma, itu pemisah ribuan
+    if (dotCount > 1 || (dotCount === 1 && amountStr.indexOf('.') < amountStr.length - 3)) {
+        // Format: 2.452.382 (titik sebagai pemisah ribuan)
+        amountStr = amountStr.replace(/\./g, '');
+    } else if (commaCount > 1 || (commaCount === 1 && amountStr.indexOf(',') < amountStr.length - 3)) {
+        // Format: 2,452,382 (koma sebagai pemisah ribuan)
+        amountStr = amountStr.replace(/,/g, '');
+    } else if (dotCount === 1) {
+        // Format: 50.5 (titik sebagai desimal) - biarkan
+    } else if (commaCount === 1) {
+        // Format: 50,5 (koma sebagai desimal) - ganti ke titik
+        amountStr = amountStr.replace(',', '.');
+    }
+    
+    let amount = parseFloat(amountStr);
+    
+    // Konversi ke rupiah berdasarkan suffix
     if (unit === 'k' || unit === 'rb' || unit === 'ribu') {
         amount *= 1000;
     } else if (unit === 'jt' || unit === 'juta') {
@@ -168,29 +212,72 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
+// Parse angka dari berbagai format
+function parseAmount(amountStr) {
+    if (!amountStr) return NaN;
+    
+    // Hapus spasi
+    amountStr = amountStr.trim();
+    
+    // Deteksi format
+    const dotCount = (amountStr.match(/\./g) || []).length;
+    const commaCount = (amountStr.match(/,/g) || []).length;
+    
+    // Format: 2.452.382 (titik sebagai pemisah ribuan)
+    if (dotCount > 1 || (dotCount === 1 && amountStr.indexOf('.') < amountStr.length - 3)) {
+        amountStr = amountStr.replace(/\./g, '');
+    }
+    // Format: 2,452,382 (koma sebagai pemisah ribuan)
+    else if (commaCount > 1 || (commaCount === 1 && amountStr.indexOf(',') < amountStr.length - 3)) {
+        amountStr = amountStr.replace(/,/g, '');
+    }
+    // Format: 50,5 (koma sebagai desimal)
+    else if (commaCount === 1) {
+        amountStr = amountStr.replace(',', '.');
+    }
+    
+    return parseFloat(amountStr);
+}
+
 // Generate PDF Laporan
 async function generatePDFReport(userId) {
-    const data = loadData();
-    if (!data[userId] || data[userId].transactions.length === 0) {
-        return null;
-    }
-    
-    // Buat folder archives jika belum ada
-    if (!fs.existsSync(ARCHIVE_DIR)) {
-        fs.mkdirSync(ARCHIVE_DIR);
-    }
-    
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const pdfPath = path.join(ARCHIVE_DIR, `laporan-${userId.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.pdf`);
-    
-    return new Promise((resolve, reject) => {
-        const doc = new PDFDocument({ 
-            margin: 50,
-            size: 'A4'
-        });
-        const stream = fs.createWriteStream(pdfPath);
+    try {
+        const data = loadData();
+        if (!data[userId] || data[userId].transactions.length === 0) {
+            console.log('No transactions found for user:', userId);
+            return null;
+        }
         
-        doc.pipe(stream);
+        // Buat folder archives jika belum ada
+        if (!fs.existsSync(ARCHIVE_DIR)) {
+            console.log('Creating archives directory...');
+            fs.mkdirSync(ARCHIVE_DIR, { recursive: true });
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const pdfPath = path.join(ARCHIVE_DIR, `laporan-${userId.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.pdf`);
+        
+        console.log('Creating PDF at:', pdfPath);
+        
+        return new Promise((resolve, reject) => {
+            try {
+                const doc = new PDFDocument({ 
+                    margin: 50,
+                    size: 'A4'
+                });
+                const stream = fs.createWriteStream(pdfPath);
+                
+                stream.on('error', (err) => {
+                    console.error('Stream error:', err);
+                    reject(err);
+                });
+                
+                doc.on('error', (err) => {
+                    console.error('PDF doc error:', err);
+                    reject(err);
+                });
+                
+                doc.pipe(stream);
         
         // ===== HEADER =====
         doc.rect(0, 0, doc.page.width, 80).fill('#2c3e50');
@@ -393,7 +480,35 @@ async function generatePDFReport(userId) {
             
             currentY += 20;
         });
-    });
+        
+        // ===== FOOTER =====
+        const footerY = doc.page.height - 50;
+        doc.fontSize(8)
+           .fillColor('#7f8c8d')
+           .font('Helvetica')
+           .text(
+               `Dibuat oleh Bot Keuangan WhatsApp | ${new Date().toLocaleString('id-ID')}`,
+               50,
+               footerY,
+               { align: 'center', width: doc.page.width - 100 }
+           );
+        
+        doc.end();
+        
+        stream.on('finish', () => {
+            console.log('PDF created successfully');
+            resolve(pdfPath);
+        });
+        stream.on('error', reject);
+            } catch (err) {
+                console.error('Error in PDF generation:', err);
+                reject(err);
+            }
+        });
+    } catch (error) {
+        console.error('Error in generatePDFReport:', error);
+        return null;
+    }
 }
 
 // Tutup catatan dan reset
@@ -403,27 +518,39 @@ async function closePeriod(userId) {
         return { success: false, message: 'Tidak ada transaksi untuk ditutup.' };
     }
     
-    // Generate PDF
-    const pdfPath = await generatePDFReport(userId);
-    if (!pdfPath) {
-        return { success: false, message: 'Gagal membuat laporan PDF.' };
+    try {
+        // Generate PDF
+        console.log('Generating PDF report...');
+        const pdfPath = await generatePDFReport(userId);
+        if (!pdfPath) {
+            return { success: false, message: 'Gagal membuat laporan PDF.' };
+        }
+        console.log('PDF generated:', pdfPath);
+        
+        // Backup data ke JSON
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupPath = path.join(ARCHIVE_DIR, `backup-${userId.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.json`);
+        fs.writeFileSync(backupPath, JSON.stringify(data[userId], null, 2));
+        console.log('Backup created:', backupPath);
+        
+        // Reset transaksi
+        const { income, expense, balance } = calculateBalance(userId);
+        data[userId].transactions = [];
+        saveData(data);
+        console.log('Transactions reset for user:', userId);
+        
+        return {
+            success: true,
+            pdfPath,
+            summary: { income, expense, balance }
+        };
+    } catch (error) {
+        console.error('Error in closePeriod:', error);
+        return { 
+            success: false, 
+            message: `Error: ${error.message}` 
+        };
     }
-    
-    // Backup data ke JSON
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupPath = path.join(ARCHIVE_DIR, `backup-${userId.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.json`);
-    fs.writeFileSync(backupPath, JSON.stringify(data[userId], null, 2));
-    
-    // Reset transaksi
-    const { income, expense, balance } = calculateBalance(userId);
-    data[userId].transactions = [];
-    saveData(data);
-    
-    return {
-        success: true,
-        pdfPath,
-        summary: { income, expense, balance }
-    };
 }
 
 // Generate laporan
@@ -536,9 +663,15 @@ client.on('message', async (msg) => {
     const text = msg.body.trim();
     const textLower = text.toLowerCase();
     
+    // ===== WHITELIST CHECK =====
+    // Silent ignore - tidak ada respon sama sekali untuk user yang tidak diizinkan
+    if (!isUserAllowed(userId)) {
+        return;
+    }
+    
     // Command: /help
     if (textLower === '/help' || textLower === '/mulai') {
-        const helpText = `🤖 *BOT KEUANGAN*\n\n` +
+        const helpText = `💕 *BOT UNTUK CATAT UANG VEROLINA YANG CANTIK NAN COMEL* 💕 \n\n` +
             `*Cara Mudah (Natural):*\n` +
             `Uang masuk 50k\n` +
             `Uang keluar 20k\n` +
@@ -574,21 +707,32 @@ client.on('message', async (msg) => {
     if (textLower.startsWith('/masuk ')) {
         const parts = text.replace(/^\/masuk\s+/i, '').split(' ');
         if (parts.length < 3) {
-            await msg.reply('Format: /masuk [jumlah] [kategori] [keterangan]');
+            await msg.reply('Format: /masuk [jumlah] [kategori] [keterangan]\n\nContoh:\n/masuk 2.452.382 Gaji Gaji Januari\n/masuk 5000000 Gaji Bonus');
             return;
         }
         
-        const amount = parts[0];
+        const amountStr = parts[0];
         const category = parts[1];
         const description = parts.slice(2).join(' ');
         
-        if (isNaN(amount)) {
-            await msg.reply('Jumlah harus berupa angka!');
+        const amount = parseAmount(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            await msg.reply('❌ Jumlah tidak valid!\n\nFormat yang didukung:\n- 5000000\n- 2.452.382\n- 2,452,382');
             return;
         }
         
         addTransaction(userId, 'income', amount, category, description);
-        await msg.reply(`✅ Pemasukan ${formatCurrency(amount)} berhasil dicatat!`);
+        
+        // Hitung saldo setelah transaksi
+        const { balance } = calculateBalance(userId);
+        
+        await msg.reply(
+            `✅ *Pemasukan Tercatat*\n\n` +
+            `💰 Jumlah: ${formatCurrency(amount)}\n` +
+            `📁 Kategori: ${category}\n` +
+            `📝 Keterangan: ${description}\n\n` +
+            `💵 *Saldo Saat Ini: ${formatCurrency(balance)}*`
+        );
         return;
     }
     
@@ -596,28 +740,39 @@ client.on('message', async (msg) => {
     if (textLower.startsWith('/keluar ')) {
         const parts = text.replace(/^\/keluar\s+/i, '').split(' ');
         if (parts.length < 3) {
-            await msg.reply('Format: /keluar [jumlah] [kategori] [keterangan]');
+            await msg.reply('Format: /keluar [jumlah] [kategori] [keterangan]\n\nContoh:\n/keluar 2.452.382 Belanja Belanja bulanan\n/keluar 50000 Makanan Makan siang');
             return;
         }
         
-        const amount = parts[0];
+        const amountStr = parts[0];
         const category = parts[1];
         const description = parts.slice(2).join(' ');
         
-        if (isNaN(amount)) {
-            await msg.reply('Jumlah harus berupa angka!');
+        const amount = parseAmount(amountStr);
+        if (isNaN(amount) || amount <= 0) {
+            await msg.reply('❌ Jumlah tidak valid!\n\nFormat yang didukung:\n- 5000000\n- 2.452.382\n- 2,452,382');
             return;
         }
         
         addTransaction(userId, 'expense', amount, category, description);
-        await msg.reply(`✅ Pengeluaran ${formatCurrency(amount)} berhasil dicatat!`);
+        
+        // Hitung saldo setelah transaksi
+        const { balance } = calculateBalance(userId);
+        
+        await msg.reply(
+            `✅ *Pengeluaran Tercatat*\n\n` +
+            `💸 Jumlah: ${formatCurrency(amount)}\n` +
+            `📁 Kategori: ${category}\n` +
+            `📝 Keterangan: ${description}\n\n` +
+            `💵 *Sisa Saldo: ${formatCurrency(balance)}*`
+        );
         return;
     }
     
     // Command: /saldo
     if (textLower === '/saldo') {
         const { income, expense, balance } = calculateBalance(userId);
-        const report = `💰 *SALDO KEUANGAN*\n\n` +
+        const report = `💰 *SALDO KEUANGAN LUVLUVVV* ❤️\n\n` +
             `Pemasukan: ${formatCurrency(income)}\n` +
             `Pengeluaran: ${formatCurrency(expense)}\n` +
             `Saldo: ${formatCurrency(balance)}`;
@@ -643,7 +798,7 @@ client.on('message', async (msg) => {
     
     // Command: /tutup atau /tutup catatan
     if (textLower === '/tutup' || textLower === '/tutup catatan') {
-        await msg.reply('⏳ Sedang membuat laporan dan menutup catatan...');
+        await msg.reply('⏳ Sabar ya luvluvv catatan nya lagi di tutup 😘');
         
         try {
             const result = await closePeriod(userId);
@@ -735,6 +890,9 @@ client.on('message', async (msg) => {
                 parsed.customDate
             );
             
+            // Hitung saldo setelah transaksi
+            const { balance } = calculateBalance(userId);
+            
             const icon = type === 'income' ? '💰' : '💸';
             const typeText = type === 'income' ? 'Pemasukan' : 'Pengeluaran';
             const dateText = parsed.customDate 
@@ -746,7 +904,8 @@ client.on('message', async (msg) => {
                 `Jumlah: ${formatCurrency(parsed.amount)}\n` +
                 `Kategori: ${parsed.category}\n` +
                 `Keterangan: ${parsed.description}${dateText}\n\n` +
-                `Ketik /saldo untuk cek saldo`
+                `💵 *${type === 'income' ? 'Saldo bubub luvluv*💕 *sekarang*' : 'Sisa Saldo bubub luvluvv💕*'}: *${formatCurrency(balance)}* \n` +
+                `${type === 'expense'? 'jan boros boros dong bubb 😖😖😖':''}`
             );
             return;
         }

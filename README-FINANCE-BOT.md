@@ -2,6 +2,39 @@
 
 Bot WhatsApp untuk manajemen catatan keuangan pribadi dengan fitur export PDF.
 
+## 🔐 Whitelist / Access Control
+
+Bot ini dilengkapi dengan sistem whitelist untuk membatasi akses.
+
+### Konfigurasi Whitelist
+
+Edit file `config.js`:
+
+```javascript
+ALLOWED_USERS: [
+    '6281234567890@c.us',  // Ganti dengan nomor Anda
+    '6289876543210@c.us',  // Tambahkan nomor lain
+],
+
+// Set true untuk allow all (development only)
+ALLOW_ALL_USERS: false,
+```
+
+### Cara Mendapatkan ID WhatsApp
+
+Ketika ada user yang mencoba kirim pesan ke bot:
+
+1. Lihat logs bot: `docker compose logs -f`
+2. Akan muncul: `🚫 Access denied for user: 6281234567890@c.us`
+3. Copy ID tersebut dan tambahkan ke `config.js`
+4. Restart bot: `docker compose restart`
+
+**Catatan:** Bot tidak akan membalas pesan dari user yang tidak terdaftar (silent mode).
+
+**Format ID:** `6281234567890@c.us` (kode negara + nomor + @c.us)
+
+Baca **WHITELIST-GUIDE.md** untuk panduan lengkap.
+
 ## 📋 Fitur
 
 - ✅ Catat pemasukan dan pengeluaran (format natural)
@@ -43,7 +76,9 @@ Beli jajan 10k
 Beli makanan 20k tanggal 5
 Bayar listrik 150rb tgl 10 januari
 Terima gaji 5jt
+Terima bonus 2.452.382
 Ojek 15rb
+Belanja 2.452.382
 ```
 
 ### Catat Transaksi (Format Lengkap)
@@ -119,7 +154,16 @@ Bot mendukung berbagai format penulisan:
 - `150rb` = Rp 150.000
 - `50000` = Rp 50.000
 
-## 🏷️ Kategori Otomatis
+## 🎨 Format Jumlah
+
+Bot mendukung berbagai format penulisan angka:
+- `10k` atau `10rb` = Rp 10.000
+- `5jt` = Rp 5.000.000
+- `150rb` = Rp 150.000
+- `5000000` = Rp 5.000.000
+- `2.452.382` = Rp 2.452.382 (titik pemisah ribuan)
+- `2,452,382` = Rp 2.452.382 (koma pemisah ribuan)
+- `50.5` atau `50,5` = Rp 50,50 (desimal)
 
 Bot akan otomatis mendeteksi kategori dari kata kunci:
 - **Makanan**: jajan, makan, kopi, warteg, dll

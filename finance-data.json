@@ -1,6 +1,87 @@
 {
   "6283150916278@c.us": {
-    "transactions": [],
+    "transactions": [
+      {
+        "id": 1,
+        "type": "income",
+        "amount": 2424000,
+        "category": "Gaji",
+        "description": "masuk",
+        "date": "2026-01-06T22:58:29.023Z"
+      },
+      {
+        "id": 2,
+        "type": "expense",
+        "amount": 30000,
+        "category": "Lainnya",
+        "description": "pijet dedek",
+        "date": "2026-01-06T22:58:29.052Z"
+      },
+      {
+        "id": 3,
+        "type": "expense",
+        "amount": 20000,
+        "category": "Lainnya",
+        "description": "seblak",
+        "date": "2026-01-06T23:46:55.590Z"
+      },
+      {
+        "id": 4,
+        "type": "expense",
+        "amount": 20000,
+        "category": "Belanja",
+        "description": "ayam",
+        "date": "2026-01-06T23:53:49.324Z"
+      },
+      {
+        "id": 5,
+        "type": "expense",
+        "amount": 1000000,
+        "category": "Belanja",
+        "description": "pc",
+        "date": "2026-01-06T23:53:56.848Z"
+      },
+      {
+        "id": 6,
+        "type": "income",
+        "amount": 20000,
+        "category": "Gaji",
+        "description": "masuk",
+        "date": "2026-01-06T23:54:05.521Z"
+      },
+      {
+        "id": 7,
+        "type": "expense",
+        "amount": 50000,
+        "category": "Lainnya",
+        "description": "ayam",
+        "date": "2026-01-06T23:57:58.427Z"
+      },
+      {
+        "id": 8,
+        "type": "expense",
+        "amount": 20000,
+        "category": "Makanan",
+        "description": "bakso",
+        "date": "2026-01-06T23:59:53.710Z"
+      },
+      {
+        "id": 9,
+        "type": "expense",
+        "amount": 32000,
+        "category": "Lainnya",
+        "description": "mie ayam",
+        "date": "2026-01-07T00:01:26.828Z"
+      },
+      {
+        "id": 10,
+        "type": "expense",
+        "amount": 20000,
+        "category": "Lainnya",
+        "description": "pecelan",
+        "date": "2026-01-07T00:02:37.425Z"
+      }
+    ],
     "categories": [
       "Makanan",
       "Transport",
@@ -11,7 +92,48 @@
     ]
   },
   "6285961523932@c.us": {
-    "transactions": [],
+    "transactions": [
+      {
+        "id": 1,
+        "type": "income",
+        "amount": 2424386,
+        "category": "Gaji",
+        "description": "Pemasukan",
+        "date": "2026-01-06T23:40:24.634Z"
+      },
+      {
+        "id": 2,
+        "type": "expense",
+        "amount": 30000,
+        "category": "Lainnya",
+        "description": "pijet dedek",
+        "date": "2026-01-06T23:40:45.189Z"
+      },
+      {
+        "id": 3,
+        "type": "expense",
+        "amount": 36000,
+        "category": "Transport",
+        "description": "bensin",
+        "date": "2026-01-06T23:44:33.474Z"
+      },
+      {
+        "id": 4,
+        "type": "expense",
+        "amount": 4000,
+        "category": "Lainnya",
+        "description": "vitamin",
+        "date": "2026-01-06T23:44:46.017Z"
+      },
+      {
+        "id": 5,
+        "type": "expense",
+        "amount": 4000,
+        "category": "Makanan",
+        "description": "jajan dedek",
+        "date": "2026-01-06T23:53:37.615Z"
+      }
+    ],
     "categories": [
       "Makanan",
       "Transport",
