@@ -55,9 +55,14 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies - Puppeteer akan download Chromium otomatis
-# JANGAN set PUPPETEER_SKIP_CHROMIUM_DOWNLOAD agar Puppeteer download Chromium
-RUN npm install --production
+# Install dependencies dengan retry dan timeout yang lebih panjang
+# Puppeteer akan download Chromium otomatis
+RUN npm config set fetch-retry-maxtimeout 120000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retries 5 && \
+    npm install --production || \
+    (echo "First attempt failed, retrying..." && sleep 10 && npm install --production) || \
+    (echo "Second attempt failed, retrying..." && sleep 20 && npm install --production)
 
 # Copy application files
 COPY . .

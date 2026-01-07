@@ -10,9 +10,13 @@ docker compose down
 echo "🧹 Cleaning up..."
 docker system prune -f
 
-# Rebuild with no cache
-echo "🔨 Building new image..."
-docker compose build --no-cache
+# Rebuild with no cache and retry on failure
+echo "🔨 Building new image (this may take 5-10 minutes)..."
+docker compose build --no-cache || {
+    echo "❌ Build failed, retrying in 10 seconds..."
+    sleep 10
+    docker compose build --no-cache
+}
 
 # Start container
 echo "🚀 Starting container..."
