@@ -655,6 +655,28 @@ client.on('qr', (qr) => {
 // Event: Ready
 client.on('ready', () => {
     console.log('✅ Bot keuangan siap digunakan!');
+    console.log('📅 Waktu:', new Date().toLocaleString('id-ID'));
+});
+
+// Event: Authenticated
+client.on('authenticated', () => {
+    console.log('🔐 Autentikasi berhasil!');
+});
+
+// Event: Auth Failure
+client.on('auth_failure', (msg) => {
+    console.error('❌ Autentikasi gagal:', msg);
+});
+
+// Event: Disconnected
+client.on('disconnected', (reason) => {
+    console.log('🔌 Terputus dari WhatsApp:', reason);
+    console.log('🔄 Mencoba reconnect dalam 5 detik...');
+    
+    setTimeout(() => {
+        console.log('🔄 Reconnecting...');
+        client.initialize();
+    }, 5000);
 });
 
 // Event: Message
@@ -814,16 +836,37 @@ client.on('message', async (msg) => {
                 `💰 Total Pemasukan: ${formatCurrency(result.summary.income)}\n` +
                 `💸 Total Pengeluaran: ${formatCurrency(result.summary.expense)}\n` +
                 `📈 Saldo Akhir: ${formatCurrency(result.summary.balance)}\n\n` +
-                `📄 Laporan PDF sedang dikirim...\n` +
                 `🔄 Saldo telah direset ke Rp 0`;
             
             await msg.reply(summaryText);
             
-            // Kirim PDF
-            const media = MessageMedia.fromFilePath(result.pdfPath);
-            await client.sendMessage(userId, media, {
-                caption: '📄 Laporan Keuangan Lengkap'
-            });
+            // Kirim PDF dengan retry
+            try {
+                const media = MessageMedia.fromFilePath(result.pdfPath);
+                await client.sendMessage(userId, media, {
+                    caption: '📄 Laporan Keuangan Lengkap'
+                });
+                console.log(`✅ PDF sent to user: ${userId}`);
+            } catch (pdfError) {
+                console.error('Error sending PDF:', pdfError.message);
+                // Retry sekali lagi setelah delay
+                try {
+                    console.log('Retrying PDF send...');
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    const media = MessageMedia.fromFilePath(result.pdfPath);
+                    await client.sendMessage(userId, media, {
+                        caption: '📄 Laporan Keuangan Lengkap'
+                    });
+                    console.log(`✅ PDF sent on retry to user: ${userId}`);
+                } catch (retryError) {
+                    console.error('PDF send failed after retry:', retryError.message);
+                    await msg.reply(
+                        `⚠️ Catatan berhasil ditutup, tapi PDF gagal dikirim.\n\n` +
+                        `📁 File PDF tersimpan di server:\n${result.pdfPath}\n\n` +
+                        `Hubungi admin untuk mendapatkan file PDF.`
+                    );
+                }
+            }
             
             console.log(`✅ Catatan ditutup untuk user: ${userId}`);
         } catch (error) {
